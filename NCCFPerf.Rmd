@@ -1,0 +1,41 @@
+# Performances and funds NCCF: a data based analysis
+_Matteo Castagna (Nov/2013)_
+> This paper has been created entirely using Knitr and R statistical package, source data are stored in a SQLServer dBase and retrieved from SQL views.
+
+### Summary
+
+A large portion of our time is focused on analysing and making sure our products perform "well". Unfortunately less time is placed at making sure that fund performances are a key factor determining our products success.
+
+Let's face it: OMGI sells funds. A successful product is a product that sells. And making sure a product sells is key given OMGI revenues objectives are linked to the amount of AuMs.
+It is fairly simple.
+
+Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are our retail products, not mandates or Hedge Funds.
+
+The number of retail products for which OMGI might collects performance fees are _UKDEFOS_, _GEAR_, _UKOPP_ and _SKMFUT_. 
+
+The _IR&P_ team has developed a substantial dataset that enable proper data analysis: this paper is based on a panel covering 122 fund over the last 10 months (Jan/2013 to Oct/2013). The raw dataset includes 1079 observations and for analytical purpose (i.e. once outliers have been removed) the set is reduced to 
+
+An added set of panel
+
+```{r}
+
+```
+
+
+What I'm trying to assess with this paper is if there is any sensible statistical relationship between fund performances and 
+
+Yes I know the value of pi is `r pi`, and 2 times pi is `r 2*pi`.
+OK, here we go: $\alpha+\beta=\gamma$. 
+
+
+```{r}
+
+```
+
+You can also embed plots, for example:
+
+```{r fig.width=7, fig.height=6}
+
+```
+
+![knitr logo](http://yihui.name/knitr/images/knit-logo.png)

@@ -12,9 +12,14 @@ compdata <- sqlQuery(channel, "SELECT * FROM vw_CompNCCF ORDER BY FundId, RefDat
 close(channel)
 rm(channel)
 
-save(rawdata, file = "COMPset.Rda")
+save(compdata, file = "COMPset.Rda")
 load("COMPset.Rda")
 
+
+#add variable
+compdata$ItemType <- compdata$ItemId
+compdata$ItemType <- sub("Comp.", "Competitor", compdata$ItemType)
+compdata$ItemType <- sub("BS", "BestSeller", compdata$ItemType)
 
 str(compdata)
 #remove outliers

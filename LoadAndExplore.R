@@ -1,21 +1,16 @@
 #setwd("g:/GitHub/PerfNCCF/")
 
-#library(RODBC)
-library(lattice)
 library(ggplot2)
 library(scales)
-#library(zoo)
 library(car)
-source("multiplot.R")
 
-#channel <- odbcConnect("SQLServerPerfRep")
-#
-#rawdata <- sqlQuery(channel, "SELECT * FROM vw_EstimatedNCCF ORDER BY FundCode, RefDate")
-#
-#close(channel)
-#rm(channel)
+# library(RODBC)
+# channel <- odbcConnect("SQLServerPerfRep")
+# rawdata <- sqlQuery(channel, "SELECT * FROM vw_EstimatedNCCF ORDER BY FundCode, RefDate")
+# close(channel)
+# rm(channel)
+# save(rawdata, file = "OMGIset.Rda")
 
-#save(rawdata, file = "OMGIset.Rda")
 load("OMGIset.Rda")
 
 #str(rawdata)
@@ -23,224 +18,52 @@ load("OMGIset.Rda")
 #change names
 colnames(rawdata)[names(rawdata) == "NCCFEstimate"] <- "NCCF"
 rawdata$RefDate <- as.Date(rawdata$RefDate)
-length(unique(rawdata$FundCode))
+print(paste0("Raw number of products: ",
+             as.character(length(unique(rawdata$FundCode)))))
 
 #remove outliers
 NCCFtolerance <- 0.5
-sum(rawdata$NCCF > NCCFtolerance |  rawdata$NCCF < -NCCFtolerance, na.rm = TRUE)
-rawdata1 <- rawdata[rawdata$NCCF < NCCFtolerance & rawdata$NCCF > -NCCFtolerance, ]
+print(paste0("Outliers with |NCCF| > ", 
+            as.character(NCCFtolerance*100), "%: " ,
+            sum(rawdata$NCCF > NCCFtolerance |  
+                  rawdata$NCCF < -NCCFtolerance, na.rm = TRUE)))
+panelA <- rawdata[rawdata$NCCF < NCCFtolerance & 
+                    rawdata$NCCF > -NCCFtolerance, ]
 
 ExcludeFunds <- c("SKPROP")
-sum(rawdata1$FundCode %in% ExcludeFunds, na.rm=TRUE)
-rawdata1 <- rawdata1[! rawdata1$FundCode %in% ExcludeFunds, ]
+print(paste0("Excluded funds: ", ExcludeFunds))
+sum(panelA$FundCode %in% ExcludeFunds, na.rm=TRUE)
+panelA <- panelA[! panelA$FundCode %in% ExcludeFunds, ]
 #exclude Select seeded
 
-#summary(rawdata1$IsSelect)
-rawdata1 <- rawdata1[! rawdata1$IsSelect == 1, ]
-length(unique(rawdata1$FundCode))
+#summary(panelA$IsSelect)
+print(paste0("Seeded Select funds obs.: ", as.character(
+  sum(panelA$IsSelect == 1, na.rm=TRUE))))
+panelA <- panelA[! panelA$IsSelect == 1, ]
+print(paste0("Final number of products: ",
+             as.character(length(unique(panelA$FundCode)))))
 
-summary(rawdata1)
+print(paste0("Final number of observations: ",
+             as.character(length(panelA$FundCode))))
+
+#summary(panelA)
 #######ADDED SETS
 #extreme performers
 extremeThresh <- 0.15
-rawdata2 <- rawdata1[rawdata1$Rank1y < extremeThresh | 
-                       rawdata1$Rank1y > 1- extremeThresh, ]
+panelA_extr <- panelA[panelA$Rank1y < extremeThresh | 
+                          panelA$Rank1y > 1- extremeThresh, ]
 
 #normal performers
-rawdata3 <- rawdata1[rawdata1$Rank1y > extremeThresh & 
-                       rawdata1$Rank1y < 1- extremeThresh, ]
+panelA_mid <- panelA[panelA$Rank1y > extremeThresh & 
+                       panelA$Rank1y < 1- extremeThresh, ]
 
 #scaled sets
-dataScaled <- data.frame(scale(rawdata1[, c("NCCF", 
-                                             "RelPerf1y", 
-                                             "RelPerf2y", 
-                                             "RelPerf3y",
-                                             "RelPerf3m", 
-                                             "RelPerf6m",
-                                             "Rank1y", 
-                                             "Rank3y")]))
-
-#exploring plots
-hist(rawdata1$NCCF, prob = TRUE)
-curve(dnorm(x, mean = mean(rawdata1$NCCF, na.rm = TRUE), sd = sd(rawdata1$NCCF, na.rm = TRUE)), add=TRUE, col = "red")
-
-plot(rawdata1$RelPerf3y, rawdata1$NCCF)
-plot(rawdata1$RelPerf1y, rawdata1$NCCF)
-plot(rawdata1$RelPerf6m, rawdata1$NCCF)
-plot(rawdata1$Rank3y, rawdata1$NCCF)
-plot(rawdata1$Rank1y, rawdata1$NCCF)
-
-
-modelKitchenSink <- lm(NCCF ~
-                     AbsPerf3m +
-                     AbsPerf6m +
-                     AbsPerf1y +
-                     AbsPerf2y +
-                     AbsPerf3y +
-                     RelPerf3m +
-                     RelPerf6m +
-                     RelPerf1y +
-                     RelPerf2y +
-                     RelPerf3y +
-                     Rank3m +
-                     Rank6m +
-                     Rank1y +
-                     Rank2y +
-                     Rank3y,
-                     data = rawdata1, na.action = na.omit)
-summary(modelKitchenSink)
-
-model <- step(modelKitchenSink, direction="both")
+# dataScaled <- data.frame(scale(panelA[, c("NCCF", 
+#                                              "RelPerf1y", 
+#                                              "RelPerf2y", 
+#                                              "RelPerf3y",
+#                                              "RelPerf3m", 
+#                                              "RelPerf6m",
+#                                              "Rank1y", 
+#                                              "Rank3y")]))
 # 
-# 
-# model1 <- lm(NCCF ~ AbsPerf3m +
-#                AbsPerf6m + 
-#                AbsPerf1y + 
-#                AbsPerf2y + 
-#                AbsPerf3y, data = rawdata1, na.action = na.omit)
-# summary(model1)
-# 
-# model2 <- lm(NCCF ~ RelPerf3m +
-#                RelPerf6m + 
-#                RelPerf1y + 
-#                RelPerf2y + 
-#                RelPerf3y, data = rawdata1, na.action = na.omit)
-# summary(model2)
-# 
-# model3 <- lm(NCCF ~ Rank3m +
-#                Rank6m + 
-#                Rank1y + 
-#                Rank2y + 
-#                Rank3y, data = rawdata1, na.action = na.omit)
-# summary(model3)
-# 
-# model4 <- lm(NCCF ~ 
-#                RelPerf3y + 
-#                Rank1y, data = rawdata1, na.action = na.omit)
-# 
-# summary(model4)
-# confint(model4)
-# 
-# model4s <- lm(NCCF ~ 
-#                RelPerf3y + 
-#                Rank1y, 
-#               data = modelScaled, na.action = na.omit)
-summary(model)
-confint(model)
-
-
-#nice plots
-
-# xyplot(NCCF ~ RelPerf3y | Vehicle, 
-#        data=rawdata1, #type=c("p","r"),
-#        panel = function(x,y,...){
-#          panel.xyplot(x, y, pch = 21,col = "black")
-#          panel.lmline(x,y,col = "red")}
-# )
-
-p1 <- ggplot(na.omit(rawdata1[rawdata1$Vehicle == "OEIC" | rawdata1$Vehicle == "UCITS4", ]
-               [,c("NCCF", "RelPerf3y", "Vehicle")]), 
-       aes(x=RelPerf3y, y=NCCF)) + 
-  geom_point(shape=1) + 
-  geom_smooth(method= "lm", se = TRUE) +
-  facet_wrap( ~ Vehicle, nrow=2) + 
-  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
-  ggtitle("Monthly NCCF* by Relative performance (3y) \n") +
-  #theme(legend.title=element_blank()) +
-  scale_x_continuous(labels=percent) +
-  scale_y_continuous(labels=percent) +
-  ylab("NCCF/AuM") +
-  xlab("Relative Performance (3y)") 
-
-p2 <- ggplot(na.omit(rawdata1[rawdata1$Vehicle == "OEIC" | rawdata1$Vehicle == "UCITS4", ]
-               [,c("NCCF", "Rank1y", "Vehicle")]), 
-       aes(x=Rank1y, y=NCCF)) + 
-  geom_point(shape=1) + 
-  geom_smooth(method= "lm", se = TRUE) +
-  facet_wrap( ~ Vehicle, nrow=2) + 
-  theme(plot.title = element_text(lineheight=0.8, face="bold", size = 10)) +
-  ggtitle("Monthly NCCF* by percentile ranking (1y) \n") +
-  #theme(legend.title=element_blank()) +
-  scale_x_continuous(labels=percent) +
-  scale_y_continuous(labels=percent) +
-  ylab("NCCF/AuM") +
-  xlab("1y Percentile ranking") 
-
-multiplot(p1, p2, cols = 2)
-
-p1 <- ggplot(na.omit(rawdata2[rawdata2$Vehicle == "OEIC" | rawdata2$Vehicle == "UCITS4", ]
-               [,c("NCCF", "Rank1y", "Vehicle")]), 
-       aes(x=Rank1y, y=NCCF)) + 
-  geom_point(shape=1) + 
-  geom_smooth(method= "lm", se = TRUE) +
-  facet_wrap( ~ Vehicle, nrow=2) + 
-  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
-  ggtitle("Monthly NCCF* by peer rank (1y) \n (percentile < 15% or > 85%) \n") +
-  #theme(legend.title=element_blank()) +
-  scale_x_continuous(labels=percent) +
-  scale_y_continuous(labels=percent) +
-  ylab("NCCF/AuM") +
-  xlab("Peer rank") 
-
-p2 <- ggplot(na.omit(rawdata3[rawdata3$Vehicle == "OEIC" | rawdata3$Vehicle == "UCITS4", ]
-               [,c("NCCF", "Rank1y", "Vehicle")]), 
-       aes(x=Rank1y, y=NCCF)) + 
-  geom_point(shape=1) + 
-  geom_smooth(method= "lm", se = TRUE) +
-  facet_wrap( ~ Vehicle, nrow=2) + 
-  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
-  ggtitle("Monthly NCCF* by peer rank (1y) \n (percentile > 15% or < 85%) \n") +
-  #theme(legend.title=element_blank()) +
-  scale_x_continuous(labels=percent) +
-  scale_y_continuous(labels=percent) +
-  ylab("NCCF/AuM") +
-  xlab("Peer rank") 
-
-multiplot(p1, p2, cols = 2)
-#Predictions
-
-completeSet <- rawdata1[,c("NCCF", 
-                          "RelPerf3y", 
-                          "Rank1y")]
-completeSet <- completeSet[complete.cases(completeSet), ]
-
-set.seed(12345)
-index <- 1:nrow(completeSet)
-trainindex <- sample(index, trunc(length(index)*2/3))
-trainset <- completeSet[trainindex, ]
-testset <- completeSet[-trainindex, ]
-
-str(trainset)
-str(testset)
-
-predicted <- predict(model, testset)
-actual <- testset$NCCF
-
-RMSD <- sqrt(sum((actual-predicted)^2)/length(actual))
-
-rsq <- 1-sum((actual-predicted)^2)/sum((actual-mean(actual))^2)
-print(rsq)
-print(RMSD)
-print(RMSD/mean(actual))
-print(paste0("Prediction error: ", as.character(round(RMSD/(max(actual)-min(actual)),3)*100),"%"))
-#http://en.wikipedia.org/wiki/Root-mean-square_deviation
-
-#png("IntRatePrediction.png", width=480, height=400, units= "px")
-plot(actual, predicted, 
-     main = "NCCF: actual vs. predicted", cex.main = 1, 
-     yaxt = "n", xaxt = "n", cex.axis=0.75,
-      bty= "n") #xlim=c(-.5, 0.5), ylim=c(-0.50, 0.5),
-axis(2, at=pretty(predicted)
-     , lab=paste0(pretty(predicted)*100, "%")
-     , las = TRUE, cex.axis=0.75)
-axis(1, at=pretty(actual)
-     , lab=paste0(pretty(actual)*100, "%")
-     , las = TRUE, cex.axis=0.75)
-
-abline(0,1, col="red")
-#dev.off()
-
-qqPlot(model, main="QQ Plot")
-influencePlot(model, id.method="noteworthy", main="Influence Plot", sub="Circle size is proportial to Cook's Distance" )
-
-rm(list = ls(pattern = "model."))

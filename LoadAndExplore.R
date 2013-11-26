@@ -20,6 +20,9 @@ colnames(rawdata)[names(rawdata) == "NCCFEstimate"] <- "NCCF"
 rawdata$RefDate <- as.Date(rawdata$RefDate)
 print(paste0("Raw number of products: ",
              as.character(length(unique(rawdata$FundCode)))))
+print(paste0("Observations: ",
+             as.character(length(rawdata$FundCode))))
+
 
 #remove outliers
 NCCFtolerance <- 0.5

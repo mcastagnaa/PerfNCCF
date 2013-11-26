@@ -147,31 +147,65 @@ hr {
 <body>
 <h1>Performances and funds NCCF: a data based analysis</h1>
 
-<p><em>Matteo Castagna (Nov/2013)</em></p>
+<p><em>Matteo Castagna (Nov/2013) - OMGI Investment Risk &amp; Performance / v.1.0</em></p>
 
 <blockquote>
-<p>This paper has been created using Knitr and R statistical package</p>
+<p>This paper has been created entirely with <em>R</em> language and environment (a GNU project - available as Free Software); raw data are stored and retrieved from a SQLServer dBase. 
+The added <em>R</em> packages [1] used are listed in the <em>References page</em></p>
 </blockquote>
 
-<h3>Summary</h3>
+<h3>Introduction and summary</h3>
 
-<p>A large portion of our time is focused on analysing and making sure our products perform &ldquo;well&rdquo;. Unfortunately less time is placed at making sure that fund performances are a key factor determining our products success.</p>
+<p>A large portion of our time is focused on analysing and making sure funds perform &ldquo;well&rdquo;. But are fund performances a key factor determining their success?</p>
 
-<p>Let&#39;s face it: OMGI sells funds. A successful product is a product that sells. And making sure a product sells is key given OMGI revenues objectives are linked to the amount of AuMs.
-It is fairly simple.</p>
+<p>A successful product is a product that sells. A fund that performs well (is absolute terms, vs. a reference index or vs. peer group) but doesn&#39;t sell is not a success. The objective of an asset management company is to sell as many of their fund as they can using scalable operations (i.e. without incurring in excess operational costs).
+Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are retail products, not mandates or Hedge Funds.
+Retail products only rarely command performance fees [2]. </p>
 
-<p>Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are our retail products, not mandates or Hedge Funds.</p>
+<p>This papers demonstate that there is a very weak statistical relationship between a fund performance and the net client cashflows (NCCF - the difference between subscriptions and redemptions); that is: there is no clear relationship between the fund manager success (as measured by its product performance) and the asset management company success (as measured by the increase of AuMs).</p>
 
-<p>The number of retail products for which OMGI might collects performance fees are <em>UKDEFOS</em>, <em>GEAR</em>, <em>UKOPP</em> and <em>SKMFUT</em>. </p>
+<h3>Method</h3>
 
-<p>The <em>IR&amp;P</em> team has developed a substantial dataset that enable proper data analysis: this paper is based on performance data for </p>
+<p>The <em>IR&amp;P</em> team has developed a substantial dataset that enable proper data analysis: this paper is based on two data panels:</p>
 
-<pre><code>
-Error in levels(x) : object &#39;rawdata&#39; not found
+<ul>
+<li>Panel A - covering the entire set of OMGI funds/mandates over the last 10 months (Jan/2013 to Oct/2013) </li>
+</ul>
 
+<pre><code>## [1] &quot;Raw number of products: 122&quot;
 </code></pre>
 
-<p>fund over the period</p>
+<pre><code>## [1] &quot;Observations: 1079&quot;
+</code></pre>
+
+<ul>
+<li>Panel B - covering typically the bigger OMGI retail funds alongside up to 7 competitors (as defined by the <em>product</em> unit) and &ldquo;two bestsellers&rdquo; (over the last 1m and 3m , as sourced from Morningstar) observed between Apr/2013 and Oct/2013. </li>
+</ul>
+
+<pre><code>## [1] &quot;Raw number of products: 15&quot;
+</code></pre>
+
+<pre><code>## [1] &quot;Observations: 653&quot;
+</code></pre>
+
+<p>Panel A is used to analyse the impact of different measures of performance on the monthly NCCF. 
+The performance measures used are absolute, relative and sector percentile ranking over 1m, 3m, 6m, 1y, 2y, 3y. The analysis considered as well the 1m and 3m lagged performance variables by 1, 2, and 3 periods (that is the effect on NCCF from the performance 1, 2 and three months before).
+When more data will be available further lags will be considered.</p>
+
+<p>Panel B is used to assess how important is the 1y and 3y relative performance (relative to the best sellers) to explain the 1 or 3 months NCCF ratio vs. the best seller NCCF in the peer group.</p>
+
+<h4>PanelA analysis</h4>
+
+<p>The raw dataset for Panel A consists in official performance data (as collected on a monthly basis from Morningstar) and NCCF estimates computed by <em>IR&amp;P</em> based on the following: 
+\[ 
+\frac{NCCF_i(t-1, t)}{AuM_i(t-1)} = (\frac{AuM_i(t)}{AuM_i(t-1)} - 1) - {Perf_i(t-1, t)}
+ \] 
+that is the percent change of AuMs for the product <em>i</em> between <em>t-1</em> and <em>t</em> due to only to subscriptions and redemptions is equal to the percentage change of the fund AuMs less the fund performance over the same period.
+What we are doing with that measure is to get rid of the increase of AuM in the fund due to the performance of the fund itself; the latter is typically liked to the market movements and not the activity of the fund manager.</p>
+
+<p>and for analytical purpose (i.e. once outliers have been removed) the set is reduced to </p>
+
+<p>An added set of panel</p>
 
 <p>What I&#39;m trying to assess with this paper is if there is any sensible statistical relationship between fund performances and </p>
 
@@ -180,7 +214,43 @@ OK, here we go: \( \alpha+\beta=\gamma \). </p>
 
 <p>You can also embed plots, for example:</p>
 
+<h3>Results</h3>
+
+<h3>Conclusions</h3>
+
+<h3>References</h3>
+
+<p>[1] The following packages have been used: RODBC, ggplot2, scales, car, knitr.</p>
+
+<p>[2] in the OMGI case we only have <em>UKDEFOS</em>, <em>GEAR</em>, <em>UKOPP</em> and <em>SKMFUT</em></p>
+
 <p><img src="http://yihui.name/knitr/images/knit-logo.png" alt="knitr logo"/></p>
+
+<table><thead>
+<tr>
+<th align="left">First Header</th>
+<th align="center">Second Header</th>
+<th align="right">Third Header</th>
+</tr>
+</thead><tbody>
+<tr>
+<td align="left">First row</td>
+<td align="center">Data</td>
+<td align="right">Very long data entry</td>
+</tr>
+<tr>
+<td align="left">Second row</td>
+<td align="center"><strong>Cell</strong></td>
+<td align="right"><em>Cell</em></td>
+</tr>
+<tr>
+<td align="left">Third row</td>
+<td align="center">Cell that spans across two columns</td>
+<td align="right"></td>
+</tr>
+</tbody></table>
+
+<p>[Table caption, works as a reference][section-mmd-tables-table1] </p>
 
 </body>
 

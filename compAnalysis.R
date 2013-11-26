@@ -18,6 +18,12 @@ compdata$ItemType <- compdata$ItemId
 compdata$ItemType <- sub("Comp.", "Competitor", compdata$ItemType)
 compdata$ItemType <- sub("BS", "BestSeller", compdata$ItemType)
 
+print(paste0("Raw number of products: ",
+             as.character(length(unique(compdata$FundId)))))
+print(paste0("Observations: ",
+             as.character(length(compdata$FundId))))
+
+
 str(compdata)
 #remove outliers
 threshold <- 50

@@ -11,22 +11,42 @@ A successful product is a product that sells. A fund that performs well (is abso
 Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are retail products, not mandates or Hedge Funds.
 Retail products only rarely command performance fees [2]. 
 
-This papers demonstate that there is no statistically significant relationship between a fund performance and the net client cashflows (NCCF - the difference between subscriptions and redemptions); that is there is no clear relationship between the fund manager success (as measured by its product performance) and the asset management company success (as measured by the increase of AuMs).
+This papers demonstate that there is a very weak statistical relationship between a fund performance and the net client cashflows (NCCF - the difference between subscriptions and redemptions); that is: there is no clear relationship between the fund manager success (as measured by its product performance) and the asset management company success (as measured by the increase of AuMs).
 
 ### Method
 
 The _IR&P_ team has developed a substantial dataset that enable proper data analysis: this paper is based on two data panels:
-- Panel A - covering the entire set of 122 OMGI funds/mandates over the last 10 months (Jan/2013 to Oct/2013). The raw dataset has 1079 observations.
-- Panel B - covering 15 funds (the biggest ones) alongside up to 8 competitors in the specific peer group observed between Apr/2013 and Oct/2013. This panel has 653 observations.
+- Panel A - covering the entire set of OMGI funds/mandates over the last 10 months (Jan/2013 to Oct/2013) 
+```{r, echo=FALSE}
+load("OMGIset.Rda")
+colnames(rawdata)[names(rawdata) == "NCCFEstimate"] <- "NCCF"
+rawdata$RefDate <- as.Date(rawdata$RefDate)
+print(paste0("Raw number of products: ",
+             as.character(length(unique(rawdata$FundCode)))))
+print(paste0("Observations: ",
+             as.character(length(rawdata$FundCode))))
+```
+
+- Panel B - covering typically the bigger OMGI retail funds alongside up to 7 competitors (as defined by the _product_ unit) and "two bestsellers" (over the last 1m and 3m , as sourced from Morningstar) observed between Apr/2013 and Oct/2013. 
+```{r, echo=FALSE}
+load("COMPset.Rda")
+compdata$ItemType <- compdata$ItemId
+compdata$ItemType <- sub("Comp.", "Competitor", compdata$ItemType)
+compdata$ItemType <- sub("BS", "BestSeller", compdata$ItemType)
+
+print(paste0("Raw number of products: ",
+             as.character(length(unique(compdata$FundId)))))
+print(paste0("Observations: ",
+             as.character(length(compdata$FundId))))
+
+```
 
 Panel A is used to analyse the impact of different measures of performance on the monthly NCCF. 
-The performance measures used are absolute, relative and sector percentile ranking over 3m, 6m, 1y, 2y, 3y. 
-The funds considered in this analysis are daily liquidity funds (client can subscribe and redeem on a daily basis); although lagged variables can be easily used, the author didn't explore that route given 
-a) the daily liquidity characteristics and 
-b) the initial results showed a significant explanatory power only for long performance measures anyway.
+The performance measures used are absolute, relative and sector percentile ranking over 1m, 3m, 6m, 1y, 2y, 3y. The analysis considered as well the 1m and 3m lagged performance variables by 1, 2, and 3 periods (that is the effect on NCCF from the performance 1, 2 and three months before).
+When more data will be available further lags will be considered.
 
 Panel B is used to assess how important is the 1y and 3y relative performance (relative to the best sellers) to explain the 1 or 3 months NCCF ratio vs. the best seller NCCF in the peer group.
-
+#### PanelA analysis
 The raw dataset for Panel A consists in official performance data (as collected on a monthly basis from Morningstar) and NCCF estimates computed by _IR&P_ based on the following: 
 $$
 \frac{NCCF_i(t-1, t)}{AuM_i(t-1)} = (\frac{AuM_i(t)}{AuM_i(t-1)} - 1) - {Perf_i(t-1, t)}

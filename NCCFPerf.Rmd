@@ -1,21 +1,45 @@
 # Performances and funds NCCF: a data based analysis
 _Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.0_
-> This paper has been created entirely with *R* language and environment (a GNU project - available as Free Software); raw data are stored and retrieved from a SQLServer dBase. 
-The added *R* packages [1] used are listed in the _References page_
+> This paper has been created entirely with *R* language and environment (a GNU project - available as Free Software)
+Raw data are stored and retrieved from a SQLServer dBase. 
+The added *R* packages used are listed below.
+
+> The entire analysis is reproducible and embedded in the paper itself at runtime.
+
+```{r}
+library(ggplot2)
+library(knitr)
+library(scales)
+library(car)
+library(grid)
+library(gridExtra)
+library(zoo)
+library(bdsmatrix)
+library(nlme)
+library(Formula)
+library(MASS)
+library(sandwich)
+library(plm)
+```
+
 
 ### Introduction and summary
 
-A large portion of our time is focused on analysing and making sure funds perform "well". But are fund performances a key factor determining their success?
+A large portion of our time is focused on analysing and making sure funds perform "well". But are fund performances a key factor determining their success? Or is it something else driving it?
 
-A successful product is a product that sells. A fund that performs well (is absolute terms, vs. a reference index or vs. peer group) but doesn't sell is not a success. The objective of an asset management company is to sell as many of their fund as they can using scalable operations (i.e. without incurring in excess operational costs).
+My starting point is that a commercially successful product is a product that sells. A fund that performs well (however you want to measure this: in absolute terms, vs. a reference index or vs. peer group) but doesn't sell is not a success. 
+
+The objective of an asset management company is to sell as many of their fund as they can using scalable operations (i.e. without incurring in excess operational costs).
 Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are retail products, not mandates or Hedge Funds.
-Retail products only rarely command performance fees [2]. 
+Retail products only rarely command performance fees [1]. 
 
-This papers demonstate that there is a very weak statistical relationship between a fund performance and the net client cashflows (NCCF - the difference between subscriptions and redemptions); that is: there is no clear relationship between the fund manager success (as measured by its product performance) and the asset management company success (as measured by the increase of AuMs).
+This papers demonstate that there is a very weak statistical relationship between a fund performance and the net client cashflows (NCCF - the difference between subscriptions and redemptions).
+That is: there is no clear relationship between the fund manager success in terms of fund returns (using all possible different measures) and its commercial success (as measured by the increase of AuMs).
 
 ### Method
 
 The _IR&P_ team has developed a substantial dataset that enable proper data analysis: this paper is based on two data panels:
+
 - Panel A - covering the entire set of OMGI funds/mandates over the last 10 months (Jan/2013 to Oct/2013) 
 ```{r, echo=FALSE}
 load("OMGIset.Rda")
@@ -28,12 +52,15 @@ print(paste0("Observations: ",
 ```
 
 - Panel B - covering typically the bigger OMGI retail funds alongside up to 7 competitors (as defined by the _product_ unit) and "two bestsellers" (over the last 1m and 3m , as sourced from Morningstar) observed between Apr/2013 and Oct/2013. 
+
 ```{r, echo=FALSE}
 load("COMPset.Rda")
+
+#add variable
 compdata$ItemType <- compdata$ItemId
 compdata$ItemType <- sub("Comp.", "Competitor", compdata$ItemType)
 compdata$ItemType <- sub("BS", "BestSeller", compdata$ItemType)
-
+compdata$RefDate <- as.Date(compdata$RefDate)
 print(paste0("Raw number of products: ",
              as.character(length(unique(compdata$FundId)))))
 print(paste0("Observations: ",
@@ -42,61 +69,327 @@ print(paste0("Observations: ",
 ```
 
 Panel A is used to analyse the impact of different measures of performance on the monthly NCCF. 
-The performance measures used are absolute, relative and sector percentile ranking over 1m, 3m, 6m, 1y, 2y, 3y. The analysis considered as well the 1m and 3m lagged performance variables by 1, 2, and 3 periods (that is the effect on NCCF from the performance 1, 2 and three months before).
+The performance measures used are
+- absolute 
+- relative
+- sector percentile ranking 
+over 1m, 3m, 6m, 1y, 2y, 3y. 
+The analysis considered as well the 1m and 3m lagged performance variables by 1, 2, and 3 periods (that is the effect on NCCF from the performance variables 1, 2 and three months before).
 When more data will be available further lags will be considered.
 
 Panel B is used to assess how important is the 1y and 3y relative performance (relative to the best sellers) to explain the 1 or 3 months NCCF ratio vs. the best seller NCCF in the peer group.
-#### PanelA analysis
+Using Panel B enables us to explore beyond the OMGI world.
+
+#### Panel A data management
 The raw dataset for Panel A consists in official performance data (as collected on a monthly basis from Morningstar) and NCCF estimates computed by _IR&P_ based on the following: 
+
 $$
-\frac{NCCF_i(t-1, t)}{AuM_i(t-1)} = (\frac{AuM_i(t)}{AuM_i(t-1)} - 1) - {Perf_i(t-1, t)}
+NCCF(t) = \frac{NCCF_i(t-1, t)}{AuM_i(t-1)} =\left(\frac{AuM_i(t)}{AuM_i(t-1)} - 1\right) - {Perf_i(t-1, t)}
 $$ 
+
 that is the percent change of AuMs for the product _i_ between _t-1_ and _t_ due to only to subscriptions and redemptions is equal to the percentage change of the fund AuMs less the fund performance over the same period.
-What we are doing with that measure is to get rid of the increase of AuM in the fund due to the performance of the fund itself; the latter is typically liked to the market movements and not the activity of the fund manager.
+What we are doing with that measure is to get rid of the increase of AuM in the fund due to the performance of the fund itself which is liked to the market movements and/or _alpha_ delivered by the activity of the fund manager.
 
-and for analytical purpose (i.e. once outliers have been removed) the set is reduced to 
+Few tweaks are applied to the dataset in order to get rid of outliers (notably the SKPROP fund is showing wild performance swings because of a) how the fund is priced and b) how difficult is to get hold of the benchmark data) and observations belonging to products not actually marketed (i.e. using seed capital).
 
+```{r echo=FALSE}
+NCCFtolerance <- 0.5
+print(paste0("Outliers with |NCCF| > ", 
+            as.character(NCCFtolerance*100), "%: " ,
+            sum(rawdata$NCCF > NCCFtolerance |  
+                  rawdata$NCCF < -NCCFtolerance, na.rm = TRUE)))
+panelA <- rawdata[rawdata$NCCF < NCCFtolerance & 
+                    rawdata$NCCF > -NCCFtolerance, ]
 
-An added set of panel
+ExcludeFunds <- c("SKPROP")
+print(paste0("Excluded funds: ", ExcludeFunds))
+sum(panelA$FundCode %in% ExcludeFunds, na.rm=TRUE)
+panelA <- panelA[! panelA$FundCode %in% ExcludeFunds, ]
+#exclude Select seeded
 
-```{r}
+#summary(panelA$IsSelect)
+print(paste0("Seeded Select funds obs.: ", as.character(
+  sum(panelA$IsSelect == 1, na.rm=TRUE))))
+panelA <- panelA[! panelA$IsSelect == 1, ]
+print(paste0("Final number of products: ",
+             as.character(length(unique(panelA$FundCode)))))
+
+print(paste0("Final number of observations: ",
+             as.character(length(panelA$FundCode))))
+
+```
+
+The end result is the data set for panel A used for numerical and graphical analysis.
+
+The distribution of the NCCF in the sample is as follows:
+
+```{r echo =FALSE, fig.width=6, fig.height=6}
+hist(panelA$NCCF, prob = TRUE)
+curve(dnorm(x, mean = mean(panelA$NCCF, na.rm = TRUE), 
+            sd = sd(panelA$NCCF, na.rm = TRUE)), 
+      add=TRUE, col = "red")
 
 ```
 
 
-What I'm trying to assess with this paper is if there is any sensible statistical relationship between fund performances and 
+#### Panel B data management
 
-Yes I know the value of pi is `r pi`, and 2 times pi is `r 2*pi`.
-OK, here we go: $\alpha+\beta=\gamma$. 
+Data are again sourced from Morningstar and the criteria for their collection is based on the definition of a restricted set of competitors for the relevant OMGI funds as defined by the _Products_ unit.
+The focus in this case is about assessing how the performance-NCCF relationship works outside the OMGI set of products.
+NCCF is now provided by Morningstar and it's not based on _IR&P_ estimates.
+The basic dataset is the same as the one used for the regular monthly updates
 
+```{r echo = FALSE, fig.width=10, fig.height=8}
+bubexset <- compdata[compdata$FundId == 314 & 
+                       as.Date(compdata$RefDate) == as.Date('2013-10-31'),]
 
-```{r}
+ggplot(bubexset, aes(Perf3y, 
+                     NCCF3mGBPmn,
+                     size = StDev3y, 
+                     label=ItemId)) +
+  geom_point(aes(colour = ItemType)) +
+  geom_text(size=3) +
+  xlab("Performance 3y (annualized)") + ylab("NCCF 3m (GBP mn)") +
+  labs(title = bubexset[bubexset$ItemId == 'OMGI', "FundName"]) + 
+  theme(plot.title = element_text(face = "bold")) +
+  scale_colour_manual(values = c("red","orange", "cyan", "green")) + 
+  scale_size_continuous(range = c(6, 20), 
+                        name = "Standard Dev. 3y\n(annualized)") +
+  annotation_custom(
+    grob = tableGrob(bubexset[! bubexset$ItemType =="OMGI",
+                              c("ItemId", "FundName")],
+    show.rownames = FALSE,
+    show.box      = FALSE,
+    gpar.coretext = gpar(fontsize = 7),
+                     show.colnames = FALSE,),  
+    xmin = 16, xmax = 25, ymin = 300, ymax = 350)
+
+rm(bubexset)
+
 
 ```
 
-You can also embed plots, for example:
+The transformations applied are as follows:
+- the best sellers have been dropped: there are instances where they are already included in the competitors set and their distance from the proper set is typically quite big making them not so useful for the analysis
+- Once BS are dropped, the Ratio of NCCF of each fund vs. highest NCCF over 1 or 3 months (NCCF1mGBPmn and NCCF3mGBPmn) is computed (giving RatioToBS1m and RatioToBS3m) [this is dealt with at SQL level]
+- The performance of the funds (1y and 3y) are then divided by the performance of the best seller over 1m and 3m (giving Perf1y1mRatio, Perf3y1mRatio and perf1y3mRatio, perf3y3mRatio)  [this is dealt with at SQL level]
+- outliers are removed (outliers defined by |RatioToBS1m| or |RatioToBS3m| > 10 and |PeformanceRatios| > 3) 
+- The group of funds observations where the number of competitors in the sample with valid data is less than 2 is dropped as well.
 
-```{r fig.width=7, fig.height=6}
+The variables available for Panel B are:
 
+```{r echo =FALSE}
+names(compdata)
+```
+
+
+```{r echo = FALSE}
+threshold <- 10
+compdata[! is.na(compdata$RatioToBS1m) & 
+           (compdata$RatioToBS1m < -threshold | 
+          compdata$RatioToBS1m > threshold)
+         , "RatioToBS1m"] <- NA
+
+compdata[! is.na(compdata$RatioToBS3m) & 
+           (compdata$RatioToBS3m < -threshold | 
+              compdata$RatioToBS3m > threshold)
+         , "RatioToBS3m"] <- NA
+
+#NA performing outliers
+threshPerf <- 3
+compdata[! is.na(compdata$Perf3y1mRatio) & 
+           abs(compdata$Perf3y1mRatio) > threshPerf
+         , "Perf3y1mRatio"] <- NA
+
+compdata[! is.na(compdata$Perf3y3mRatio) & 
+           abs(compdata$Perf3y3mRatio) > threshPerf
+         , "Perf3y3mRatio"] <- NA
+
+compdata[! is.na(compdata$Perf1y1mRatio) & 
+           abs(compdata$Perf1y1mRatio) > threshPerf
+         , "Perf1y1mRatio"] <- NA
+
+compdata[! is.na(compdata$Perf1y3mRatio) & 
+           abs(compdata$Perf1y3mRatio) > threshPerf
+         , "Perf1y3mRatio"] <- NA
+
+
+#remove Best sellers
+panelB <- compdata[! compdata$ItemId %in% c('BS1m', 'BS3m'), ]
+#Filter out small samples
+panelB <- panelB[panelB$CompNo > 2,]
+
+
+```
+
+The equivalent of chart above based this time on the NCCF, Performance and Volatility ratios would then be:
+
+```{r echo = FALSE, fig.width=10, fig.height=8}
+bubexset <- panelB[panelB$FundId == 314 & 
+                       panelB$RefDate == as.Date('2013-10-31'), ]
+
+#png("testQuality.png", width = 640, height = 640)
+
+ggplot(bubexset, aes(Perf3y3mRatio, 
+                     RatioToBS3m,
+                     size = StDev3y3mRatio, 
+                     label=ItemId)) +
+  geom_point(aes(colour = ItemType)) +
+  geom_text(size=3) +
+  xlab("Performance 3y (Ratio to BS)") + ylab("NCCF 3m (Ratio to BS)") +
+  labs(title = bubexset[bubexset$ItemId == 'OMGI', "FundName"]) + 
+  theme(plot.title = element_text(face = "bold")) +
+  scale_colour_manual(values = c("cyan", "green")) + 
+  scale_size_continuous(range = c(6, 20), 
+                        name = "Standard Dev. 3y\n(Ratio to BS)") +
+  annotation_custom(
+    grob = tableGrob(bubexset[! bubexset$ItemType =="OMGI",
+                              c("ItemId", "FundName")],
+                     show.rownames = FALSE,
+                     show.box      = FALSE,
+                     gpar.coretext = gpar(fontsize = 7),
+                     show.colnames = FALSE,),  
+    xmin = 16, xmax = 25, ymin = 300, ymax = 350)
+
+```
+
+Interpreting that chart (i.e. the ratio numbers) is intuitive as well: what the chart is showing as an example is that while Comp4 returned more than 20% on top of what the best seller (OMGI) did over the last three months, the NCCF is about 54% of that fund.
+
+```{r echo=FALSE}
+print(bubexset[, c("ItemId", "RatioToBS3m", "Perf3y3mRatio",
+                   "StDev3y3mRatio")])
+rm(bubexset)
 ```
 
 ### Results
+```{r echo=FALSE}
+extremeThresh <- 0.15
+panelA_extr <- panelA[panelA$Rank1y < extremeThresh | 
+                          panelA$Rank1y > 1- extremeThresh, ]
+
+#normal performers
+panelA_mid <- panelA[panelA$Rank1y > extremeThresh & 
+                       panelA$Rank1y < 1- extremeThresh, ]
+
+```
+
+#### Panel A analysis
+```{r echo = FALSE, fig.width=10, fig.height=8}
+source("multiplot.R")
+
+p1 <- ggplot(na.omit(panelA[panelA$Vehicle == "OEIC" | panelA$Vehicle == "UCITS4", ]
+                     [,c("NCCF", "RelPerf3y", "Vehicle")]), 
+             aes(x=RelPerf3y, y=NCCF)) + 
+  geom_point(shape=1) + 
+  geom_smooth(method= "lm", se = TRUE) +
+  facet_wrap( ~ Vehicle, nrow=2) + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
+  ggtitle("Monthly NCCF* by Relative performance (3y) \n") +
+  #theme(legend.title=element_blank()) +
+  scale_x_continuous(labels=percent) +
+  scale_y_continuous(labels=percent) +
+  ylab("NCCF") +
+  xlab("3y Relative Performance") 
+
+p2 <- ggplot(na.omit(panelA[panelA$Vehicle == "OEIC" | panelA$Vehicle == "UCITS4", ]
+                     [,c("NCCF", "Rank1y", "Vehicle")]), 
+             aes(x=Rank1y, y=NCCF)) + 
+  geom_point(shape=1) + 
+  geom_smooth(method= "lm", se = TRUE) +
+  facet_wrap( ~ Vehicle, nrow=2) + 
+  theme(plot.title = element_text(lineheight=0.8, face="bold", size = 10)) +
+  ggtitle("Monthly NCCF* by percentile ranking (1y) \n") +
+  #theme(legend.title=element_blank()) +
+  scale_x_continuous(labels=percent) +
+  scale_y_continuous(labels=percent) +
+  ylab("NCCF") +
+  xlab("1y Percentile ranking") 
+
+multiplot(p1, p2, cols = 2)
+
+```
+
+```{r echo = FALSE, fig.width=10, fig.height=8}
+p1 <- ggplot(na.omit(panelA_extr[panelA_extr$Vehicle == "OEIC" | panelA_extr$Vehicle == "UCITS4", ]
+                     [,c("NCCF", "Rank1y", "Vehicle")]), 
+             aes(x=Rank1y, y=NCCF)) + 
+  geom_point(shape=1) + 
+  geom_smooth(method= "lm", se = TRUE) +
+  facet_wrap( ~ Vehicle, nrow=2) + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
+  ggtitle("Monthly NCCF* by peer rank (1y) \n (percentile < 15% or > 85%) \n") +
+  #theme(legend.title=element_blank()) +
+  scale_x_continuous(labels=percent) +
+  scale_y_continuous(labels=percent) +
+  ylab("NCCF") +
+  xlab("Peer rank") 
+
+p2 <- ggplot(na.omit(panelA_mid[panelA_mid$Vehicle == "OEIC" | panelA_mid$Vehicle == "UCITS4", ]
+                     [,c("NCCF", "Rank1y", "Vehicle")]), 
+             aes(x=Rank1y, y=NCCF)) + 
+  geom_point(shape=1) + 
+  geom_smooth(method= "lm", se = TRUE) +
+  facet_wrap( ~ Vehicle, nrow=2) + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
+  ggtitle("Monthly NCCF* by peer rank (1y) \n (percentile > 15% or < 85%) \n") +
+  #theme(legend.title=element_blank()) +
+  scale_x_continuous(labels=percent) +
+  scale_y_continuous(labels=percent) +
+  ylab("NCCF") +
+  xlab("Peer rank") 
+
+multiplot(p1, p2, cols = 2)
+
+```
+
+
+#### Panel B analysis
+```{r echo = FALSE, fig.width=10, fig.height=10}
+par(mar = c(4,4,2,2))
+par(mfrow = c(2,2))
+plot(panelB$Perf1y1mRatio, panelB$RatioToBS1m, 
+     col=rgb(0,100,0,50,maxColorValue=255), pch=16,
+     xlab = "1y perf. ratio to 1m best NCCF 1y perf.",
+     ylab = "1m NCCF ratio to 1m best NCCF", 
+     cex.lab = 0.7,
+     cex.axis = 0.7, 
+     bty="n")
+mtext("NCCF to best seller (among selected competitors) vs. performance ratios", 
+      side = 3, adj = 0, cex = 0.7, line = 1, font = 4)
+plot(panelB$Perf3y1mRatio, panelB$RatioToBS1m, 
+     col=rgb(0,100,0,50,maxColorValue=255), pch=16,
+     xlab = "3y perf. ratio to 1m best NCCF 3y perf.",
+     ylab = "1m NCCF ratio to 1m best NCCF", 
+     cex.lab = 0.7,
+     cex.axis = 0.7, 
+     bty="n")
+plot(panelB$Perf1y3mRatio, panelB$RatioToBS3m, 
+     col=rgb(0,100,0,50,maxColorValue=255), pch=16,
+     xlab = "1y perf. ratio to 1m best NCCF 1y perf.",
+     ylab = "3m NCCF ratio to 3m best NCCF", 
+     cex.lab = 0.7,
+     cex.axis = 0.7, 
+     bty="n")
+plot(panelB$Perf3y3mRatio, panelB$RatioToBS3m, 
+     col=rgb(0,100,0,50,maxColorValue=255), pch=16, 
+     xlab = "3y perf. ratio to 3m best NCCF 3y perf.",
+     ylab = "3m NCCF ratio to 3m best NCCF", 
+     cex.lab = 0.7,
+     cex.axis = 0.7, 
+     bty="n")
+par(mar = c(5,4,4,2) + 0.1)
+par(mfcol = c(1,1))
+
+```
+
 
 ### Conclusions
 
 ### References
-[1] The following packages have been used: RODBC, ggplot2, scales, car, knitr.
 
-[2] in the OMGI case we only have _UKDEFOS_, _GEAR_, _UKOPP_ and _SKMFUT_
+[1] in the OMGI case we only have _UKDEFOS_, _GEAR_, _UKOPP_ and _SKMFUT_
 
 
 
 ![knitr logo](http://yihui.name/knitr/images/knit-logo.png)
-
-| First Header  | Second Header | Third Header         |
-| :------------ | :-----------: | -------------------: |
-| First row     | Data          | Very long data entry |
-| Second row    | **Cell**      | *Cell*               |
-| Third row     | Cell that spans across two columns  ||
-[Table caption, works as a reference][section-mmd-tables-table1] 
 

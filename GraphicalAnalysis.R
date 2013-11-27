@@ -59,6 +59,8 @@ p2 <- ggplot(na.omit(rawdata3[rawdata3$Vehicle == "OEIC" | rawdata3$Vehicle == "
   xlab("Peer rank") 
 
 multiplot(p1, p2, cols = 2)
+
+
 #Predictions
 
 completeSet <- panelA[,c("NCCF", 

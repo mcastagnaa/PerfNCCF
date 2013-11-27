@@ -17,27 +17,49 @@ load("COMPset.Rda")
 compdata$ItemType <- compdata$ItemId
 compdata$ItemType <- sub("Comp.", "Competitor", compdata$ItemType)
 compdata$ItemType <- sub("BS", "BestSeller", compdata$ItemType)
-
+compdata$RefDate <- as.Date(compdata$RefDate)
 print(paste0("Raw number of products: ",
              as.character(length(unique(compdata$FundId)))))
 print(paste0("Observations: ",
              as.character(length(compdata$FundId))))
 
-
 str(compdata)
-#remove outliers
-threshold <- 50
-panelB <- compdata[compdata$RatioToBS1m > -threshold & 
-                        compdata$RatioToBS1m < threshold,]
+#NA outliers
+threshold <- 10
+compdata[! is.na(compdata$RatioToBS1m) & 
+           abs(compdata$RatioToBS1m) > threshold
+         , "RatioToBS1m"] <- NA
 
-panelB <- panelB[panelB$RatioToBS3m > -threshold & 
-                        panelB$RatioToBS3m < threshold,]
+compdata[! is.na(compdata$RatioToBS3m) & 
+          abs(compdata$RatioToBS3m) > threshold
+         , "RatioToBS3m"] <- NA
+
+#NA performing outliers
+threshPerf <- 3
+compdata[! is.na(compdata$Perf3y1mRatio) & 
+           abs(compdata$Perf3y1mRatio) > threshPerf
+         , "Perf3y1mRatio"] <- NA
+
+compdata[! is.na(compdata$Perf3y3mRatio) & 
+           abs(compdata$Perf3y3mRatio) > threshPerf
+         , "Perf3y3mRatio"] <- NA
+
+compdata[! is.na(compdata$Perf1y1mRatio) & 
+           abs(compdata$Perf1y1mRatio) > threshPerf
+         , "Perf1y1mRatio"] <- NA
+
+compdata[! is.na(compdata$Perf1y3mRatio) & 
+           abs(compdata$Perf1y3mRatio) > threshPerf
+         , "Perf1y3mRatio"] <- NA
+
+
 #remove Best sellers
-panelB <- panelB[! panelB$ItemId == 'BS.', ]
-
+panelB <- compdata[! compdata$ItemId %in% c('BS1m', 'BS3m'), ]
 #Filter out small samples
 panelB <- panelB[panelB$CompNo > 2,]
 
+print(paste0("Final number of observations: ",
+             as.character(length(panelB$FundId))))
 
 par(mar = c(4,4,2,2))
 par(mfrow = c(2,2))

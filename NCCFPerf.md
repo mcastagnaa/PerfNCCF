@@ -59,7 +59,7 @@ The objective of an asset management company is to sell as many of their fund as
 Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are retail products, not mandates or Hedge Funds.
 Retail products only rarely command performance fees [1]. 
 
-This papers demonstate that there is a very weak statistical relationship between a fund performance and the net client cashflows (NCCF - the difference between subscriptions and redemptions).
+This papers demonstrate that there is a very weak statistical relationship between a fund performance and the net client cash-flows (NCCF - the difference between subscriptions and redemptions).
 That is: there is no clear relationship between the fund manager success in terms of fund returns (using all possible different measures) and its commercial success (as measured by the increase of AuMs).
 
 ### Method
@@ -77,7 +77,7 @@ The _IR&P_ team has developed a substantial dataset that enable proper data anal
 ```
 
 
-- Panel B - covering typically the bigger OMGI retail funds alongside up to 7 competitors (as defined by the _product_ unit) and "two bestsellers" (over the last 1m and 3m , as sourced from Morningstar) observed between Apr/2013 and Oct/2013. 
+- Panel B - covering typically the bigger OMGI retail funds alongside up to 7 competitors (as defined by the _product_ unit) and "two best-sellers" (over the last 1m and 3m , as sourced from Morningstar) observed between Apr/2013 and Oct/2013. 
 
 
 ```
@@ -161,7 +161,7 @@ The transformations applied are as follows:
 - the best sellers have been dropped: there are instances where they are already included in the competitors set and their distance from the proper set is typically quite big making them not so useful for the analysis
 - Once BS are dropped, the Ratio of NCCF of each fund vs. highest NCCF over 1 or 3 months (NCCF1mGBPmn and NCCF3mGBPmn) is computed (giving RatioToBS1m and RatioToBS3m) [this is dealt with at SQL level]
 - The performance of the funds (1y and 3y) are then divided by the performance of the best seller over 1m and 3m (giving Perf1y1mRatio, Perf3y1mRatio and perf1y3mRatio, perf3y3mRatio)  [this is dealt with at SQL level]
-- outliers are removed (outliers defined by |RatioToBS1m| or |RatioToBS3m| > 10 and |PeformanceRatios| > 3) 
+- outliers are removed (outliers defined by |RatioToBS1m| or |RatioToBS3m| > 10 and |PerformanceRatios| > 3) 
 - The group of funds observations where the number of competitors in the sample with valid data is less than 2 is dropped as well.
 
 The variables available for Panel B are:
@@ -206,25 +206,187 @@ Interpreting that chart (i.e. the ratio numbers) is intuitive as well: what the 
 
 
 
-####Panel A analysis
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
 
+#### Panel A analysis
+
+The analysis of panel A dataset explore the relationship between monthly performance data and the NCCF.
+
+The starting point is an all-in regression where all the varible are thrown in.
+Starting from there, a stepwise algorithm [2] is used to get to the best model.
+The result is as follows:
+
+
+```
+## 
+## Call:
+## lm(formula = NCCF ~ RelPerf3y + Rank1y, data = panelA, na.action = na.omit)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -0.4074 -0.0270 -0.0028  0.0256  0.4672 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  0.00574    0.00832    0.69   0.4905    
+## RelPerf3y    0.20089    0.04216    4.76  2.5e-06 ***
+## Rank1y      -0.04077    0.01573   -2.59   0.0098 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.0832 on 461 degrees of freedom
+##   (434 observations deleted due to missingness)
+## Multiple R-squared:  0.135,	Adjusted R-squared:  0.131 
+## F-statistic:   36 on 2 and 461 DF,  p-value: 2.89e-15
+```
+
+```
+##                2.5 %    97.5 %
+## (Intercept) -0.01060  0.022081
+## RelPerf3y    0.11803  0.283738
+## Rank1y      -0.07168 -0.009865
+```
+
+
+This model concludes that statistically the RelPerf3y has a positive relationship with NCCF (_coeteris paribus_ for an extra 1% of relative performance the fund, on average, gets an extra 0.20% of NCCF) and Rank1y (_coeteris paribus_ for an extra drop in percentile ranking of 1% the fund, on average, gets an extra 0.04% of NCCF).
+While the intuition seems to be correct it is also true that, statistically, the regression is not explaining the variation in NCCF in any meaningful way (as the Adjusted R-squared at 0.13 shows).
+
+Graphically this can be shown looking at the chart plotting NCCF against those two "best" explaining variables. While at that the sample was also divided by vehicle splitting domestic (OEIC) and offshore (UCITS4) UCITS funds.
 
 ![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
 
 
 
-####Panel B analysis
+It's fairly clear that the linkage between those two variable is not very strong.
+
+Another option explored was to check if some strong relationship could be found for extreme performers (those in the top 15% or bottom 15% of the their sector table).
+Again there is no strong evidence that might lead to think that if a fund is an extreme performer it might get particular treatment from the clients: a bottom of the league performer can easily get away with it; a top performer might be commercially disappointed.
+
+
 ![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
 
 
+#### Lagging panel A variables
+An obvious pushback is: it's yesterday performance determining today NCCF. It makes sense trying that with short term performance variables (1m and 3m). 
+It doesn't make much sense if you think that it is long term performance driving today sales (lagging 1y or 3y performance numbers vs. monthly NCCF is not a good idea).
+
+Again the methodology is the same: I started with an "all-in" model where all 1m and 3m performance variable have been lagged for 1, 2 and 3 periods (that is monthly $NCCF(T)$ is explained simultaneously by $AbsPerfXm(T-i)$, $RelPerfXm(T-i)$, $RankXm(T-i)$ where $X$ is equal to 1 and 3 and $i$ is equal to 1, 2, 3) and then the stepwise algorithm returns the best model.
+
+
+```
+## [1] 55
+```
+
+```
+## 
+## Call:
+## lm(formula = NCCF ~ lag(pdataSet$Rank1m, 2) + lag(pdataSet$Rank1m, 
+##     3) + lag(pdataSet$RelPerf3m, 3) + lag(pdataSet$RelPerf1m, 
+##     3), data = pdataSet, na.action = na.omit)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -0.4227 -0.0200  0.0059  0.0289  0.3482 
+## 
+## Coefficients:
+##                            Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)                  0.0276     0.0138    2.01   0.0458 *  
+## lag(pdataSet$Rank1m, 2)     -0.0439     0.0165   -2.66   0.0082 ** 
+## lag(pdataSet$Rank1m, 3)     -0.0452     0.0224   -2.02   0.0442 *  
+## lag(pdataSet$RelPerf3m, 3)   1.1813     0.2817    4.19  3.7e-05 ***
+## lag(pdataSet$RelPerf1m, 3)  -0.9606     0.6110   -1.57   0.1171    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.0844 on 275 degrees of freedom
+##   (184 observations deleted due to missingness)
+## Multiple R-squared:  0.123,	Adjusted R-squared:  0.11 
+## F-statistic: 9.66 on 4 and 275 DF,  p-value: 2.52e-07
+```
+
+
+Again the coefficients with some significance have the expected sign (Rank1m^T-2, Rank1m^T-3, Relative performance^T-3) but the overall quality of the regression is statistically weak.
+
+Graphically you easily get to the same conclusions:
+
+![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+
+
+
+#### Panel B analysis
+
+The purpose of the panal B analysis is to check if that relationship which is not strong in the OMGI range is any more significant if we use data for other competitors.
+The variable used in this case have been explained above.
+
+The pictures below already show we can't get very high hopes even with this second data set.
+
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-17.png) 
+
+
+Numerically we have 
+
+```
+## 
+## Call:
+## lm(formula = RatioToBS1m ~ Perf3y1mRatio + Perf1y1mRatio + StDev3y1mRatio + 
+##     StDev1y1mRatio, data = panelB)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -6.734 -0.208  0.025  0.532  1.191 
+## 
+## Coefficients:
+##                Estimate Std. Error t value Pr(>|t|)  
+## (Intercept)    -0.06906    0.35212   -0.20    0.845  
+## Perf3y1mRatio   0.00933    0.24249    0.04    0.969  
+## Perf1y1mRatio   0.17640    0.15603    1.13    0.259  
+## StDev3y1mRatio -0.56290    0.28534   -1.97    0.049 *
+## StDev1y1mRatio  0.52469    0.22586    2.32    0.021 *
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.906 on 375 degrees of freedom
+##   (122 observations deleted due to missingness)
+## Multiple R-squared:  0.0216,	Adjusted R-squared:  0.0112 
+## F-statistic: 2.07 on 4 and 375 DF,  p-value: 0.0842
+```
+
+```
+## 
+## Call:
+## lm(formula = RatioToBS3m ~ Perf3y3mRatio + Perf1y3mRatio + StDev3y3mRatio + 
+##     StDev1y3mRatio, data = panelB)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -8.796 -0.146  0.061  0.466  1.002 
+## 
+## Coefficients:
+##                Estimate Std. Error t value Pr(>|t|)  
+## (Intercept)      -0.335      0.339   -0.99    0.324  
+## Perf3y3mRatio     0.514      0.219    2.35    0.019 *
+## Perf1y3mRatio     0.091      0.139    0.65    0.513  
+## StDev3y3mRatio   -0.606      0.301   -2.01    0.045 *
+## StDev1y3mRatio    0.432      0.235    1.84    0.067 .
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.05 on 411 degrees of freedom
+##   (86 observations deleted due to missingness)
+## Multiple R-squared:  0.0302,	Adjusted R-squared:  0.0207 
+## F-statistic:  3.2 on 4 and 411 DF,  p-value: 0.0133
+```
+
+
+Given the reduced number of variables there is no need to employ the stepwise algorithm. And given the lenght of the performance variable used there is no need to lag them.
+The overall sentence is: no relationship.
 
 ### Conclusions
+
 
 ### References
 
 [1] in the OMGI case we only have _UKDEFOS_, _GEAR_, _UKOPP_ and _SKMFUT_
-
+[2] http://en.wikipedia.org/wiki/Stepwise_regression (the Akaike information criterion - AIC - is used; both directions)
 
 
 ![knitr logo](http://yihui.name/knitr/images/knit-logo.png)

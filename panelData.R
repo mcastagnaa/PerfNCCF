@@ -74,12 +74,6 @@ length(unique(pdataSet$FundCode))
 
 
 laggedMod <- lm(NCCF ~ 
-                  RelPerf1m
-                + AbsPerf1m
-                + RelPerf3m
-                + AbsPerf3m
-                + RelPerf3y
-                + Rank1y
                 + lag(pdataSet$RelPerf1m, 1)
                 + lag(pdataSet$RelPerf1m, 2)
                 + lag(pdataSet$RelPerf1m, 3)
@@ -137,10 +131,10 @@ summary(discMod)
 
 par(mfrow = c(2,2))
 #plot(pdataSet$RelPerf3m, pdataSet$NCCF)
+plot(lag(pdataSet$Rank1m, 2), pdataSet$NCCF)
+plot(lag(pdataSet$Rank1m, 3), pdataSet$NCCF)
 plot(lag(pdataSet$RelPerf3m, 3), pdataSet$NCCF)
-plot(lag(pdataSet$RelPerf3m, 6), pdataSet$NCCF)
-plot(lag(pdataSet$Rank3m, 2), pdataSet$NCCF)
-plot(lag(pdataSet$RelPerf3m, 4), pdataSet$NCCF)
+plot(lag(pdataSet$RelPerf1m, 3), pdataSet$NCCF)
 par(mfrow = c(1,1))
 
 #lagSetZ <-zoo(na.omit(laggedSet))

@@ -1,12 +1,11 @@
 # Performances and funds NCCF: a data based analysis
-_Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.0_
-> This paper has been created entirely with *R* language and environment (a GNU project - available as Free Software)
-Raw data are stored and retrieved from a SQLServer dBase. 
-The added *R* packages used are listed below.
+_Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.1_
+> This paper has been created entirely with *R* language and environment (a GNU project - available as Free Software).  
+Raw data are stored and retrieved from a SQLServer dBase. The added *R* packages used are listed below.  
+The entire analysis is reproducible and embedded in the paper itself at runtime.  
+All the relevant material is available as a Git repo at https://githib.com/mcastagnaa/PerfNCCF  
 
-> The entire analysis is reproducible and embedded in the paper itself at runtime.
-
-```{r}
+```{r results='hide',message=FALSE}
 library(ggplot2)
 library(knitr)
 library(scales)
@@ -22,14 +21,14 @@ library(sandwich)
 library(plm)
 ```
 
-
 ### Introduction and summary
 
-A large portion of our time is focused on analysing and making sure funds perform "well". But are fund performances a key factor determining their success? Or is it something else driving it?
+A large portion of our time is spent analysing and making sure funds perform "well". But are fund performances a key factor determining their success? Or is it something else driving it?
 
 My starting point is that a commercially successful product is a product that sells. A fund that performs well (however you want to measure this: in absolute terms, vs. a reference index or vs. peer group) but doesn't sell is not a success. 
 
 The objective of an asset management company is to sell as many of their fund as they can using scalable operations (i.e. without incurring in excess operational costs).
+
 Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are retail products, not mandates or Hedge Funds.
 Retail products only rarely command performance fees [1]. 
 
@@ -41,7 +40,7 @@ That is: there is no clear relationship between the fund manager success in term
 The _IR&P_ team has developed a substantial dataset that enable proper data analysis: this paper is based on two data panels:
 
 - Panel A - covering the entire set of OMGI funds/mandates over the last 10 months (Jan/2013 to Oct/2013) 
-```{r, echo=FALSE}
+```{r, echo=FALSE, comment=""}
 load("OMGIset.Rda")
 colnames(rawdata)[names(rawdata) == "NCCFEstimate"] <- "NCCF"
 rawdata$RefDate <- as.Date(rawdata$RefDate)
@@ -51,9 +50,9 @@ print(paste0("Observations: ",
              as.character(length(rawdata$FundCode))))
 ```
 
-- Panel B - covering typically the bigger OMGI retail funds alongside up to 7 competitors (as defined by the _product_ unit) and "two best-sellers" (over the last 1m and 3m , as sourced from Morningstar) observed between Apr/2013 and Oct/2013. 
+- Panel B - considering the bigger OMGI retail funds alongside up to 7 competitors (as defined by the _Product_ unit) and "two best-sellers" (over the last 1m and 3m , as sourced from Morningstar). This is observed between Apr/2013 and Oct/2013. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, comment=""}
 load("COMPset.Rda")
 
 #add variable
@@ -74,10 +73,10 @@ The performance measures used are
 - relative
 - sector percentile ranking 
 over 1m, 3m, 6m, 1y, 2y, 3y. 
-The analysis considered as well the 1m and 3m lagged performance variables by 1, 2, and 3 periods (that is the effect on NCCF from the performance variables 1, 2 and three months before).
+The analysis considered as well the 1m and 3m lagged performance variables by 1, 2, and 3 periods (that is the effect on NCCF from the performance variables observed 1, 2 and 3 months before).
 When more data will be available further lags will be considered.
 
-Panel B is used to assess how important is the 1y and 3y relative performance (relative to the best sellers) to explain the 1 or 3 months NCCF ratio vs. the best seller NCCF in the peer group.
+Panel B is used to assess how important is the 1y and 3y relative performance (relative to the best sellers) and volatility of returns to explain the 1 or 3 months NCCF ratio vs. the best seller NCCF in the peer group.
 Using Panel B enables us to explore beyond the OMGI world.
 
 #### Panel A data management
@@ -88,11 +87,11 @@ NCCF(t) = \frac{NCCF_i(t-1, t)}{AuM_i(t-1)} =\left(\frac{AuM_i(t)}{AuM_i(t-1)} -
 $$ 
 
 that is the percent change of AuMs for the product _i_ between _t-1_ and _t_ due to only to subscriptions and redemptions is equal to the percentage change of the fund AuMs less the fund performance over the same period.
-What we are doing with that measure is to get rid of the increase of AuM in the fund due to the performance of the fund itself which is liked to the market movements and/or _alpha_ delivered by the activity of the fund manager.
+What we are doing with that measure is to get rid of the increase of AuM due to the performance of the fund itself which is liked to the market movements and/or _alpha_ delivered by the activity of the fund manager.
 
 Few tweaks are applied to the dataset in order to get rid of outliers (notably the SKPROP fund is showing wild performance swings because of a) how the fund is priced and b) how difficult is to get hold of the benchmark data) and observations belonging to products not actually marketed (i.e. using seed capital).
 
-```{r echo=FALSE}
+```{r echo=FALSE, comment=""}
 NCCFtolerance <- 0.5
 print(paste0("Outliers with |NCCF| > ", 
             as.character(NCCFtolerance*100), "%: " ,
@@ -103,13 +102,14 @@ panelA <- rawdata[rawdata$NCCF < NCCFtolerance &
 
 ExcludeFunds <- c("SKPROP")
 print(paste0("Excluded funds: ", ExcludeFunds))
-sum(panelA$FundCode %in% ExcludeFunds, na.rm=TRUE)
+print(paste0("Excluded observations from excluded funds: ", 
+             as.character(sum(panelA$FundCode %in% ExcludeFunds, na.rm=TRUE))))
 panelA <- panelA[! panelA$FundCode %in% ExcludeFunds, ]
 #exclude Select seeded
 
 #summary(panelA$IsSelect)
-print(paste0("Seeded Select funds obs.: ", as.character(
-  sum(panelA$IsSelect == 1, na.rm=TRUE))))
+print(paste0("Seeded Select funds obs.: ", 
+             as.character(sum(panelA$IsSelect == 1, na.rm=TRUE))))
 panelA <- panelA[! panelA$IsSelect == 1, ]
 print(paste0("Final number of products: ",
              as.character(length(unique(panelA$FundCode)))))
@@ -170,7 +170,7 @@ rm(bubexset)
 ```
 
 The transformations applied are as follows:
-- the best sellers have been dropped: there are instances where they are already included in the competitors set and their distance from the proper set is typically quite big making them not so useful for the analysis
+- the best sellers have been dropped: there are instances where they are already included in the competitors set and their distance from the rest is typically quite big making them not so useful for the analysis
 - Once BS are dropped, the Ratio of NCCF of each fund vs. highest NCCF over 1 or 3 months (NCCF1mGBPmn and NCCF3mGBPmn) is computed (giving RatioToBS1m and RatioToBS3m) [this is dealt with at SQL level]
 - The performance of the funds (1y and 3y) are then divided by the performance of the best seller over 1m and 3m (giving Perf1y1mRatio, Perf3y1mRatio and perf1y3mRatio, perf3y3mRatio)  [this is dealt with at SQL level]
 - outliers are removed (outliers defined by |RatioToBS1m| or |RatioToBS3m| > 10 and |PerformanceRatios| > 3) 
@@ -178,12 +178,12 @@ The transformations applied are as follows:
 
 The variables available for Panel B are:
 
-```{r echo =FALSE}
+```{r echo =FALSE, comment=""}
 names(compdata)
 ```
 
 
-```{r echo = FALSE}
+```{r echo = FALSE, comment=""}
 threshold <- 10
 compdata[! is.na(compdata$RatioToBS1m) & 
            (compdata$RatioToBS1m < -threshold | 
@@ -228,8 +228,6 @@ The equivalent of chart above based this time on the NCCF, Performance and Volat
 bubexset <- panelB[panelB$FundId == 314 & 
                        panelB$RefDate == as.Date('2013-10-31'), ]
 
-#png("testQuality.png", width = 640, height = 640)
-
 ggplot(bubexset, aes(Perf3y3mRatio, 
                      RatioToBS3m,
                      size = StDev3y3mRatio, 
@@ -241,21 +239,13 @@ ggplot(bubexset, aes(Perf3y3mRatio,
   theme(plot.title = element_text(face = "bold")) +
   scale_colour_manual(values = c("cyan", "green")) + 
   scale_size_continuous(range = c(6, 20), 
-                        name = "Standard Dev. 3y\n(Ratio to BS)") +
-  annotation_custom(
-    grob = tableGrob(bubexset[! bubexset$ItemType =="OMGI",
-                              c("ItemId", "FundName")],
-                     show.rownames = FALSE,
-                     show.box      = FALSE,
-                     gpar.coretext = gpar(fontsize = 7),
-                     show.colnames = FALSE,),  
-    xmin = 16, xmax = 25, ymin = 300, ymax = 350)
+                        name = "Standard Dev. 3y\n(Ratio to BS)") 
 
 ```
 
-Interpreting that chart (i.e. the ratio numbers) is intuitive as well: what the chart is showing as an example is that while Comp4 returned more than 20% on top of what the best seller (OMGI) did over the last three months, the NCCF is about 54% of that fund.
+Interpreting that chart (i.e. the ratio numbers) is intuitive as well: what the chart is showing is that while _Comp4_ returned more than 20% on top of what the best seller (_OMGI_ in this case) did over the last three months, the NCCF is about 54% of that fund.
 
-```{r echo=FALSE}
+```{r echo=FALSE, comment=""}
 print(bubexset[, c("ItemId", "RatioToBS3m", "Perf3y3mRatio",
                    "StDev3y3mRatio")])
 rm(bubexset)
@@ -282,7 +272,7 @@ The starting point is an all-in regression where all the variable are thrown in.
 Starting from there, a stepwise algorithm [2] is used to get to the best model.
 The result is as follows:
 
-```{r echo = FALSE}
+```{r echo = FALSE, comment=""}
 modelKitchenSink <- lm(NCCF ~
                          AbsPerf3m +
                          AbsPerf6m +
@@ -312,7 +302,8 @@ rm(modelKitchenSink)
 
 ```
 
-This model concludes that statistically the RelPerf3y has a positive relationship with NCCF (_coeteris paribus_ for an extra 1% of relative performance the fund, on average, gets an extra 0.20% of NCCF) and Rank1y (_coeteris paribus_ for an extra drop in percentile ranking of 1% the fund, on average, gets an extra 0.04% of NCCF).
+This model concludes that, statistically, _RelPerf3y_ has a positive relationship with NCCF (_coeteris paribus_ for an extra 1% of relative performance the fund, on average, gets an extra 0.20% of NCCF) and _Rank1y_ (_coeteris paribus_ for an extra drop in percentile ranking of 1% the fund, on average, gets an extra 0.04% of NCCF).
+
 While the intuition seems to be correct it is also true that, statistically, the regression is not explaining the variation in NCCF in any meaningful way (as the Adjusted R-squared at 0.13 shows).
 
 Graphically this can be shown looking at the chart plotting NCCF against those two "best" explaining variables. While at that the sample was also divided by vehicle splitting domestic (OEIC) and offshore (UCITS4) UCITS funds.
@@ -398,7 +389,7 @@ It doesn't make much sense if you think that it is long term performance driving
 
 Again the methodology is the same: I started with an "all-in" model where all 1m and 3m performance variable have been lagged for 1, 2 and 3 periods (that is monthly $NCCF(T)$ is explained simultaneously by $AbsPerfXm(T-i)$, $RelPerfXm(T-i)$, $RankXm(T-i)$ where $X$ is equal to 1 and 3 and $i$ is equal to 1, 2, 3) and then the stepwise algorithm returns the best model.
 
-```{r echo=FALSE}
+```{r echo=FALSE, comment=""}
 panelSet <- na.omit(panelA[, c("FundCode"
                          , "RefDate"
                          , "NCCF"
@@ -418,7 +409,7 @@ pdataSet <- pdata.frame(panelSet
 rm(panelSet)
 
 #head(pdataSet)
-length(unique(pdataSet$FundCode))
+#length(unique(pdataSet$FundCode))
 
 laggedMod <- lm(NCCF ~ 
                 + lag(pdataSet$RelPerf1m, 1)
@@ -449,7 +440,7 @@ rm(laggedMod)
 
 ```
 
-Again the coefficients with some significance have the expected sign (Rank1m^T-2, Rank1m^T-3, Relative performance^T-3) but the overall quality of the regression is statistically weak.
+Again the coefficients with some significance have the expected sign (Rank1m^T-2 , Rank1m^T-3 , Relative performance^T-3) but the overall quality of the regression is statistically weak.
 
 Graphically you easily get to the same conclusions:
 
@@ -511,7 +502,7 @@ par(mfcol = c(1,1))
 ```
 
 Numerically we have 
-```{r echo=FALSE}
+```{r echo=FALSE, comment=""}
 model1m <- lm(RatioToBS1m ~
                 Perf3y1mRatio
               + Perf1y1mRatio
@@ -534,12 +525,32 @@ Given the reduced number of variables there is no need to employ the stepwise al
 The overall sentence is, again: no relationship.
 
 ### Conclusions
+The results shows that, while intellectually and financially rewarding for the fund manager, fund performance doesn't translate into commercial success for the asset management firm running them.
+This is largely as expected: retail clients typically receive very poor information about how their money is doing and (even more important) how their money could do in the future depending on market circumstances.
 
+Their typical fund allocation is sticky and there is the obvious psychological obstacle of taking losses and practical switching costs to be considered.
+
+If it's not performance that matters, what is? Distribution activity seems to be the obvious answer.
+Funds are created and sold on the back of fairly useless documents (KIDS) or uninformative fact-sheets.
+Regulators are primarily to blame for this but it's on the asset managers to try and pull their act together.
+
+What can be done then? This is a short list of suggestions:
+* Structure the operational environment toward the delivery of factual information about fund performances and risk characteristics. This could then allow the asset manager to
+* provide a strong linkage between client money and products, delivering statistics about client performance linked to products performance
+* make sure that the adequate level of governance (beyond the one required by the regulator) is properly addressed in all the relevant aspects. That is: make sure that a clear definition of each product is available by maintaining a structure that enable the unequivocal listing of: 
+ * risk/reward objectives
+ * investment restrictions
+ * portfolio management style
+* pro-actively engage with the clients on the basis of that information
+* potentially increasing the level of transparency around product governance items listed above
+* explore new channels to convey that information (and, possibly, have some information back)
+* provide a good reason why your products are better than others: have a brand and not only a name.
+
+Talking about the products way beyond the basic (and useless) regulatory requirements could be the key: the successful product will be the one with good stories to tell, not the one returning the best.
 
 ### References
 
-[1] in the OMGI case we only have _UKDEFOS_, _GEAR_, _UKOPP_ and _SKMFUT_
-
+[1] in the OMGI case we only have _UKDEFOS_, _GEAR_, _UKOPP_ and _SKMFUT_  
 [2] http://en.wikipedia.org/wiki/Stepwise_regression (the Akaike information criterion - AIC - is used; both directions)
 
 

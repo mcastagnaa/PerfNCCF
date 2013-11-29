@@ -1,4 +1,4 @@
-# Performances and funds NCCF: a data based analysis
+# Retail funds performance and Net Client Cash-Flows: a data based analysis
 _Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.1_
 > This paper has been created entirely with *R* language and environment (a GNU project - available as Free Software).  
 Raw data are stored and retrieved from a SQLServer dBase. The added *R* packages used are listed below.  
@@ -32,7 +32,7 @@ My starting point is that a commercially successful product is a product that se
 The objective of an asset management company is to sell as many of their fund as they can using scalable operations (i.e. without incurring in excess operational costs).
 
 Sure there are management fees that needs to be accounted for as well; but the focus of this analysis are retail products, not mandates or Hedge Funds.
-Retail products only rarely command performance fees [1]. 
+Retail products only rarely command performance fees. 
 
 This papers demonstrate that there is a very weak statistical relationship between a fund performance and the net client cash-flows (NCCF - the difference between subscriptions and redemptions).
 That is: there is no clear relationship between the fund manager success in terms of fund returns (using all possible different measures) and its commercial success (as measured by the increase of AuMs).
@@ -245,7 +245,7 @@ Again there is no strong evidence that might lead to think that if a fund is an 
 An obvious push-back is: it's yesterday performance determining today NCCF. It makes sense trying that with short term performance variables (1m and 3m). 
 It doesn't make much sense if you think that it is long term performance driving today sales (lagging 1y or 3y performance numbers vs. monthly NCCF is not a good idea).
 
-Again the methodology is the same: I started with an "all-in" model where all 1m and 3m performance variable have been lagged for 1, 2 and 3 periods (that is monthly $NCCF(T)$ is explained simultaneously by $AbsPerfXm(T-i)$, $RelPerfXm(T-i)$, $RankXm(T-i)$ where $X$ is equal to 1 and 3 and $i$ is equal to 1, 2, 3) and then the stepwise algorithm returns the best model.
+Again the methodology is the same: we start with an "all-in" model where all 1m and 3m performance variable have been lagged for 1, 2 and 3 periods (that is monthly $NCCF(T)$ is explained simultaneously by $AbsPerfXm(T-i)$, $RelPerfXm(T-i)$, $RankXm(T-i)$ where $X$ is equal to 1 and 3 and $i$ is equal to 1, 2, 3) and then the stepwise algorithm returns the best model.
 
 
 ```
@@ -276,9 +276,9 @@ F-statistic: 9.66 on 4 and 275 DF,  p-value: 2.52e-07
 ```
 
 
-Again the coefficients with some significance have the expected sign (Rank1m^T-2 , Rank1m^T-3 , Relative performance^T-3) but the overall quality of the regression is statistically weak.
+Again the coefficients with some significance have the expected sign (Rank1m^T-2 , Rank1m^T-3 , Relative performance^T-3 ) but the overall quality of the regression is statistically weak.
 
-Graphically you easily get to the same conclusions:
+Graphically you get to the same conclusions:
 
 ![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
 
@@ -349,38 +349,39 @@ F-statistic:  3.2 on 4 and 411 DF,  p-value: 0.0133
 ```
 
 
-Given the reduced number of variables there is no need to employ the stepwise algorithm. And given the length of the performance variable used there is no need to lag them.
+Given the reduced number of variables there is no need to employ the stepwise algorithm. And given the length of the performance variable used, there is no need to lag them.  
 The overall sentence is, again: no relationship.
 
 ### Conclusions
-The results shows that, while intellectually and financially rewarding for the fund manager, fund performance doesn't translate into commercial success for the asset management firm running them.
+The results show that, while intellectually and financially rewarding for the fund manager, fund performance doesn't automatically translate into commercial success for the asset management firm running them.  
 This is largely as expected: retail clients typically receive very poor information about how their money is doing and (even more important) how their money could do in the future depending on market circumstances.
 
-Their typical fund allocation is sticky and there is the obvious psychological obstacle of taking losses and practical switching costs to be considered.
+Their typical fund allocation is sticky and there is the obvious psychological obstacle of taking losses and practical switching costs affecting their decisions.
 
-If it's not performance that matters, what is? Distribution activity seems to be the obvious answer.
-Funds are created and sold on the back of fairly useless documents (KIDS) or uninformative fact-sheets.
-Regulators are primarily to blame for this but it's on the asset managers to try and pull their act together.
+If it's not performance that matters, what is?  
+Distribution activity seems to be the obvious answer.
+Funds are created and sold on the back of institutional documents like KIIDS or uninformative fact-sheets that might be delievered with a considerable delay.
+Regulators are primarily to blame for this but it's the author opinion it's on the asset managers industry to try and pull their act together.
 
 What can be done then? This is a short list of suggestions:
-* Structure the operational environment toward the delivery of factual information about fund performances and risk characteristics. This could then allow the asset manager to
-* provide a strong linkage between client money and products, delivering statistics about client performance linked to products performance
-* make sure that the adequate level of governance (beyond the one required by the regulator) is properly addressed in all the relevant aspects. That is: make sure that a clear definition of each product is available by listing
+* Structure the Investment Manager operation toward the delivery of factual information about fund performances and portfolios characteristics. This could then allow the asset manager to
+* provide a strong linkage between client money and products, hopefully delivering statistics about client performance linked to products performance
+* make sure the adequate level of governance (beyond the one required by the regulator) is properly addressed in all the relevant aspects. That is: make sure that a clear definition of each product is available by maintaining a structure that enable the unequivocal listing of: 
  * risk/reward objectives
  * investment restrictions
  * portfolio management style
 * pro-actively engage with the clients on the basis of that information
 * potentially increasing the level of transparency around product governance items listed above
-* explore new channels to convey that information (and, possibly, have some infomation back)
-* provide a good reason why your products are better than others: have a brand and not only a name.
+* explore new channels to convey that information (and, possibly, have some information back): social media is the obvious candidate.
 
-Talking about the products way beyond the basic (and useless) regulatory requirements could be the key: the successful product will be the one with good stories to tell, not the one returning the best.
+This could then provide a better framework to explain why there is a good reason your products are better than others: effectively this could create a proper brand and not only a name.
+
+It has also to be considered that this better level of service might also lead to better pricing power: in a commoditized industry (also considering the effect of RDR) this could be crucial.
+
+Talking about the products way beyond the basic regulatory requirements could be the key: the successful product will be the one with good stories to tell, not the one returning the best.
 
 ### References
 
-[1] in the OMGI case we only have _UKDEFOS_, _GEAR_, _UKOPP_ and _SKMFUT_  
-[2] http://en.wikipedia.org/wiki/Stepwise_regression (the Akaike information criterion - AIC - is used; both directions)
+[1] http://en.wikipedia.org/wiki/Stepwise_regression (the Akaike information criterion - AIC - is used; both directions)
 
-
-![knitr logo](http://yihui.name/knitr/images/knit-logo.png)
 

@@ -96,6 +96,18 @@ plot(panelB$Perf3y3mRatio, panelB$RatioToBS3m,
 par(mar = c(5,4,4,2) + 0.1)
 par(mfcol = c(1,1))
 
+# graphical analysis by sector
+ggplot(panelB, aes(x=Perf3y3mRatio, y=RatioToBS3m)) + 
+  geom_point(shape=1) + 
+  geom_smooth(method= "lm", se = TRUE) +
+  facet_wrap( ~ Sector) + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
+  ggtitle("3m NCCF ratio to best seller by Relative performance (3y) \n") +
+  #theme(legend.title=element_blank()) +
+  ylab("3m NCCF ratio") +
+  xlab("3y Performance ratio") 
+
+
 
 #numerical analysis on Panel B
 

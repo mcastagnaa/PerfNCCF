@@ -8,6 +8,9 @@ plot(panelA$RelPerf3y, panelA$NCCF)
 plot(panelA$Rank1y, panelA$NCCF)
 
 
+# TODO:
+# add sector information
+
 modelKitchenSink <- lm(NCCF ~
                          AbsPerf3m +
                          AbsPerf6m +

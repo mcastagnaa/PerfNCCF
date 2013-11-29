@@ -33,7 +33,7 @@ rm(bubexset)
 
 #dev.off()
 
-# example of NCCF vs. Performance bubble chart
+# example of NCCF vs. Performance bubble chart (ratios)
 bubexset <- panelB[panelB$FundId == 314 & 
                        panelB$RefDate == as.Date('2013-10-31'), ]
 

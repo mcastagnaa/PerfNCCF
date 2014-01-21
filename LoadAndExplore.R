@@ -4,12 +4,12 @@ library(ggplot2)
 library(scales)
 library(car)
 
-# library(RODBC)
-# channel <- odbcConnect("SQLServerPerfRep")
-# rawdata <- sqlQuery(channel, "SELECT * FROM vw_EstimatedNCCF ORDER BY FundCode, RefDate")
-# close(channel)
-# rm(channel)
-# save(rawdata, file = "OMGIset.Rda")
+library(RODBC)
+channel <- odbcConnect("SQLServerPerfRep")
+rawdata <- sqlQuery(channel, "SELECT * FROM vw_EstimatedNCCF ORDER BY FundCode, RefDate")
+close(channel)
+rm(channel)
+save(rawdata, file = "OMGIset.Rda")
 
 load("OMGIset.Rda")
 

@@ -1,5 +1,5 @@
 # Retail funds performance and Net Client Cash-Flows: a data based analysis
-_Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.1_
+_Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.2_
 > This paper has been created entirely with *R* language and environment (a GNU project - available as Free Software).  
 Raw data are stored and retrieved from a SQLServer dBase. The added *R* packages used are listed below.  
 The entire analysis is reproducible and embedded in the paper itself at runtime.  
@@ -382,6 +382,26 @@ p2 <- ggplot(na.omit(panelA_mid[panelA_mid$Vehicle == "OEIC" | panelA_mid$Vehicl
 multiplot(p1, p2, cols = 2)
 
 ```
+Finally the divide between the relevant asset class has been explored as well:
+
+```{r echo = FALSE, fig.width=10, fig.height=8}
+ggplot(na.omit(panelA[panelA$Vehicle == "OEIC" | panelA$Vehicle == "UCITS4", ]
+               [,c("NCCF", "RelPerf3y", "Vehicle", "AssetClass")]), 
+       aes(x=RelPerf3y, y=NCCF)) + 
+  geom_point(shape=1) + 
+  geom_smooth(method= "lm", se = TRUE) +
+  facet_wrap( ~ AssetClass, nrow=2) + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
+  ggtitle("Monthly NCCF* by Relative performance (3y) \n") +
+  #theme(legend.title=element_blank()) +
+  scale_x_continuous(labels=percent) +
+  scale_y_continuous(labels=percent) +
+  ylab("NCCF") +
+  xlab("3y Relative Performance") 
+
+
+```
+
 
 #### Lagging panel A variables
 An obvious push-back is: it's yesterday performance determining today NCCF. It makes sense trying that with short term performance variables (1m and 3m). 

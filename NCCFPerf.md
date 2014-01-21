@@ -1,5 +1,5 @@
 # Retail funds performance and Net Client Cash-Flows: a data based analysis
-_Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.1_
+_Matteo Castagna (Nov/2013) - OMGI Investment Risk & Performance / v.1.2_
 > This paper has been created entirely with *R* language and environment (a GNU project - available as Free Software).  
 Raw data are stored and retrieved from a SQLServer dBase. The added *R* packages used are listed below.  
 The entire analysis is reproducible and embedded in the paper itself at runtime.  
@@ -240,6 +240,11 @@ Again there is no strong evidence that might lead to think that if a fund is an 
 
 ![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
 
+Finally the divide between the relevant asset class has been explored as well:
+
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
+
+
 
 #### Lagging panel A variables
 An obvious push-back is: it's yesterday performance determining today NCCF. It makes sense trying that with short term performance variables (1m and 3m). 
@@ -280,7 +285,7 @@ Again the coefficients with some significance have the expected sign (Rank1m^T-2
 
 Graphically you get to the same conclusions:
 
-![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-17.png) 
 
 
 
@@ -291,7 +296,7 @@ The variable used in this case have been explained above.
 
 The pictures below already show we can't get very high hopes even with this second data set.
 
-![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-17.png) 
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
 
 
 Numerically we have 

@@ -33,7 +33,7 @@ rm(bubexset)
 
 #dev.off()
 
-# example of NCCF vs. Performance bubble chart
+# example of NCCF vs. Performance bubble chart (ratios)
 bubexset <- panelB[panelB$FundId == 314 & 
                        panelB$RefDate == as.Date('2013-10-31'), ]
 
@@ -57,9 +57,8 @@ ggplot(bubexset, aes(Perf3y3mRatio,
                      show.rownames = FALSE,
                      show.box      = FALSE,
                      gpar.coretext = gpar(fontsize = 7),
-                     show.colnames = FALSE,),  
-    xmin = 16, xmax = 25, ymin = 300, ymax = 350)
-
+                     show.colnames = FALSE), 
+    xmin = -Inf)#, xmax = Inf)#, ymin = 2, ymax = 8)  
 rm(bubexset)
 
 #dev.off()

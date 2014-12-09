@@ -1,3 +1,18 @@
+ggplot(na.omit(panelA[panelA$Vehicle == "OEIC" | panelA$Vehicle == "UCITS4", ]
+               [,c("NCCF", "RelPerf3y", "Vehicle", "AssetClass")]), 
+       aes(x=RelPerf3y, y=NCCF)) + 
+  geom_point(shape=1) + 
+  geom_smooth(method= "lm", se = TRUE) +
+  facet_wrap( ~ AssetClass, nrow=2) + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 10)) +
+  ggtitle("Monthly NCCF* by Relative performance (3y) \n") +
+  #theme(legend.title=element_blank()) +
+  scale_x_continuous(labels=percent) +
+  scale_y_continuous(labels=percent) +
+  ylab("NCCF") +
+  xlab("3y Relative Performance") 
+
+
 source("multiplot.R")
 
 p1 <- ggplot(na.omit(panelA[panelA$Vehicle == "OEIC" | panelA$Vehicle == "UCITS4", ]
@@ -30,7 +45,7 @@ p2 <- ggplot(na.omit(panelA[panelA$Vehicle == "OEIC" | panelA$Vehicle == "UCITS4
 
 multiplot(p1, p2, cols = 2)
 
-p1 <- ggplot(na.omit(rawdata2[rawdata2$Vehicle == "OEIC" | rawdata2$Vehicle == "UCITS4", ]
+p1 <- ggplot(na.omit(panelA_extr[panelA_extr$Vehicle == "OEIC" | panelA_extr$Vehicle == "UCITS4", ]
                      [,c("NCCF", "Rank1y", "Vehicle")]), 
              aes(x=Rank1y, y=NCCF)) + 
   geom_point(shape=1) + 
@@ -44,7 +59,7 @@ p1 <- ggplot(na.omit(rawdata2[rawdata2$Vehicle == "OEIC" | rawdata2$Vehicle == "
   ylab("NCCF") +
   xlab("Peer rank") 
 
-p2 <- ggplot(na.omit(rawdata3[rawdata3$Vehicle == "OEIC" | rawdata3$Vehicle == "UCITS4", ]
+p2 <- ggplot(na.omit(panelA_mid[rawdata3$Vehicle == "OEIC" | panelA_mid$Vehicle == "UCITS4", ]
                      [,c("NCCF", "Rank1y", "Vehicle")]), 
              aes(x=Rank1y, y=NCCF)) + 
   geom_point(shape=1) + 
